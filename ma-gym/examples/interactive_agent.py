@@ -6,7 +6,7 @@ from ma_gym.wrappers import Monitor
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Interactive Agent for ma-gym')
-    parser.add_argument('--env', default='Checkers-v0',
+    parser.add_argument('--env', default='PredatorPrey7x7-v0',
                         help='Name of the environment (default: %(default)s)')
     parser.add_argument('--episodes', type=int, default=1,
                         help='episodes (default: %(default)s)')
@@ -26,6 +26,11 @@ if __name__ == '__main__':
         while not all(done_n):
             action_n = [int(_) for _ in input('Action:')]
             obs_n, reward_n, done_n, _ = env.step(action_n)
+            print("####")
+            print(obs_n)
+            print(reward_n)
+            # print(obs_n[1])
+            print("####")
             ep_reward += sum(reward_n)
             env.render()
 
