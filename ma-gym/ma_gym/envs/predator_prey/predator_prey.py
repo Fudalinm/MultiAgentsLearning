@@ -136,7 +136,7 @@ class PredatorPrey(gym.Env):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
-                    if PRE_IDS['predator'] in self._full_obs[row][col]:
+                    if PRE_IDS['predator'] in self._full_obs[row][col]: # coleagues has been seen as -1
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = -1
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
@@ -162,9 +162,9 @@ class PredatorPrey(gym.Env):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['predator'] in self._full_obs[row][col]:
                         _predator_pos[
-                            row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the predator loc.
+                            row - (pos[0] - 2), col - (pos[1] - 2)] = -1  # get relative position for the predator loc.
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
-                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = -1
+                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1
 
             _agent_i_obs += _predator_pos.flatten().tolist()  # adding prey pos in observable area
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
@@ -222,7 +222,7 @@ class PredatorPrey(gym.Env):
 
         if next_pos is not None and self._is_cell_vacant(next_pos):
             self.agent_pos[agent_i] = next_pos
-            self.agent_pos[agent_i] = next_pos
+            self.predator_pos[agent_i] = next_pos
             self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
             self.__update_predator_view(agent_i)
         else:
@@ -271,7 +271,6 @@ class PredatorPrey(gym.Env):
         return next_pos
 
     def __update_predator_view(self, agent_i):
-
         # print(self.agent_pos[agent_i])
         self._full_obs[self.agent_pos[agent_i][0]][self.agent_pos[agent_i][1]] = PRE_IDS['predator'] + str(agent_i + 1)
 
@@ -320,11 +319,9 @@ class PredatorPrey(gym.Env):
             if self._prey_alive[i]:
                 pray_alive += 1
 
-
-
         # updating moves for both predators and preys
         for agent_i, action in enumerate(agents_action):
-            if agent_i > self.n_predators:
+            if agent_i >= self.n_predators:
                 # update preys
                 if not (self._agent_dones[agent_i]):
                     self.__update_prey_pos(agent_i - self.n_predators, action)
@@ -333,6 +330,7 @@ class PredatorPrey(gym.Env):
                 if not (self._agent_dones[agent_i]):
                     self.__update_predator_pos(agent_i, action)
 
+# S: REWARDING FRAGMENT
         predator_additional_reward = 0
         prey_additional_reward = 0
         for prey_i in range(self.n_preys):
@@ -341,19 +339,19 @@ class PredatorPrey(gym.Env):
 
                 if predator_neighbour_count >= 1:
                     _reward = self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward
-                    self._prey_alive[prey_i] = (predator_neighbour_count == 1)
-                    self._agent_dones[self.n_predators+prey_i] = True
+                    f_alive = (predator_neighbour_count == 1)
+                    self._prey_alive[prey_i] = f_alive
+                    self._agent_dones[self.n_predators+prey_i] = f_alive
 
-                    for agent_i in range(self.n_agents):
-                        if predator_neighbour_count > 1:
-                            if agent_i > self.n_predators:
-                                prey_additional_reward -= _reward
-                            else:
-                                predator_additional_reward += _reward
+                    if not f_alive:
+                        prey_additional_reward -= _reward
+                        predator_additional_reward += _reward
 
+        # All of them has the same reward this is team reward!
         rewards = [self._step_cost * pray_alive + predator_additional_reward for _ in range(self.n_predators)]
         rewards_preys = [-2 * self._step_cost * pray_alive + prey_additional_reward for _ in range(self.n_preys)]
         rewards.extend(rewards_preys)
+# E: REWARDING FRAGMENT
 
         if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
             for i in range(self.n_agents):
@@ -366,17 +364,19 @@ class PredatorPrey(gym.Env):
 
     def render(self, mode='human'):
         img = copy.copy(self._base_img)
-        for agent_i in range(self.n_agents):
+        for agent_i in range(self.n_predators):
             for neighbour in self.__get_neighbour_coordinates(self.agent_pos[agent_i]):
                 fill_cell(img, neighbour, cell_size=CELL_SIZE, fill=AGENT_NEIGHBORHOOD_COLOR, margin=0.1)
             fill_cell(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_NEIGHBORHOOD_COLOR, margin=0.1)
 
-        for agent_i in range(self.n_agents):
+        for agent_i in range(self.n_predators):
             draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
             write_cell_text(img, text=str(agent_i + 1), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
                             fill='white', margin=0.4)
 
         for prey_i in range(self.n_preys):
+            print(self.prey_pos[prey_i])
+            print(self._prey_alive[prey_i])
             if self._prey_alive[prey_i]:
                 draw_circle(img, self.prey_pos[prey_i], cell_size=CELL_SIZE, fill=PREY_COLOR)
                 write_cell_text(img, text=str(prey_i + 1), pos=self.prey_pos[prey_i], cell_size=CELL_SIZE,
