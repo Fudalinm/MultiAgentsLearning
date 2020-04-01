@@ -375,8 +375,6 @@ class PredatorPrey(gym.Env):
                             fill='white', margin=0.4)
 
         for prey_i in range(self.n_preys):
-            print(self.prey_pos[prey_i])
-            print(self._prey_alive[prey_i])
             if self._prey_alive[prey_i]:
                 draw_circle(img, self.prey_pos[prey_i], cell_size=CELL_SIZE, fill=PREY_COLOR)
                 write_cell_text(img, text=str(prey_i + 1), pos=self.prey_pos[prey_i], cell_size=CELL_SIZE,
