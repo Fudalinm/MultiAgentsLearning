@@ -32,10 +32,6 @@ class PredatorPrey(gym.Env):
         self._agent_view_mask = (5, 5)
 
         self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_predators+self.n_preys)])
-        # self.action_prey_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_preys)])
-        # self.action_agent_space = []
-        # self.action_agent_space.extend(self.action_predator_space)
-        # self.action_agent_space.extend(self.action_prey_space)
 
         self.predator_pos = {_: None for _ in range(self.n_predators)}
         self.prey_pos = {_: None for _ in range(self.n_preys)}
@@ -341,7 +337,7 @@ class PredatorPrey(gym.Env):
                     _reward = self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward
                     f_alive = (predator_neighbour_count == 1)
                     self._prey_alive[prey_i] = f_alive
-                    self._agent_dones[self.n_predators+prey_i] = f_alive
+                    self._agent_dones[self.n_predators+prey_i] = not f_alive
 
                     if not f_alive:
                         prey_additional_reward -= _reward
