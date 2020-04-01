@@ -27,6 +27,7 @@ if __name__ == '__main__':
             action_n = [int(_) for _ in input('Action:')]
             obs_n, reward_n, done_n, _ = env.step(action_n)
             # print(obs_n[1])
+            print(reward_n)
             ep_reward += sum(reward_n)
             env.render()
 

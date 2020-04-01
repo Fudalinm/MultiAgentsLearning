@@ -19,7 +19,7 @@ class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-0.5,
-                 step_cost=-0.01, prey_capture_reward=5, max_steps=100):
+                 step_cost=-0.1, prey_capture_reward=5, max_steps=100):
         self._grid_shape = grid_shape
         self.n_predators = n_agents
         self.n_preys = n_preys
@@ -31,7 +31,7 @@ class PredatorPrey(gym.Env):
         self._prey_capture_reward = prey_capture_reward
         self._agent_view_mask = (5, 5)
 
-        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_predators+self.n_preys)])
+        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_predators + self.n_preys)])
 
         self.predator_pos = {_: None for _ in range(self.n_predators)}
         self.prey_pos = {_: None for _ in range(self.n_preys)}
@@ -132,7 +132,7 @@ class PredatorPrey(gym.Env):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
-                    if PRE_IDS['predator'] in self._full_obs[row][col]: # coleagues has been seen as -1
+                    if PRE_IDS['predator'] in self._full_obs[row][col]:  # coleagues has been seen as -1
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = -1
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
@@ -326,28 +326,31 @@ class PredatorPrey(gym.Env):
                 if not (self._agent_dones[agent_i]):
                     self.__update_predator_pos(agent_i, action)
 
-# S: REWARDING FRAGMENT
-        predator_additional_reward = 0
-        prey_additional_reward = 0
+        # S: REWARDING FRAGMENT
+        rewards = [self._step_cost * pray_alive for _ in range(self.n_predators)]
+        rewards_preys = [-2 * self._step_cost * pray_alive for _ in range(self.n_preys)]
+        rewards.extend(rewards_preys)
+
         for prey_i in range(self.n_preys):
             if self._prey_alive[prey_i]:
                 predator_neighbour_count, n_i = self._neighbour_predators(self.prey_pos[prey_i])
 
                 if predator_neighbour_count >= 1:
-                    _reward = self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward
+                    reward_predators_around = self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
+
+                    for predator_index in n_i:
+                        rewards[predator_index] += reward_predators_around
+                    # pray should also be punished for any predator nearby
+                    rewards[self.n_predators + prey_i] += self._penalty if predator_neighbour_count == 1 else - self._prey_capture_reward
+
                     f_alive = (predator_neighbour_count == 1)
                     self._prey_alive[prey_i] = f_alive
-                    self._agent_dones[self.n_predators+prey_i] = not f_alive
-
+                    self._agent_dones[self.n_predators + prey_i] = not f_alive
+                    #if pray is killed we need to whip it out from the map
                     if not f_alive:
-                        prey_additional_reward -= _reward
-                        predator_additional_reward += _reward
+                        self.__update_prey_pos(prey_i, None)
 
-        # All of them has the same reward this is team reward!
-        rewards = [self._step_cost * pray_alive + predator_additional_reward for _ in range(self.n_predators)]
-        rewards_preys = [-2 * self._step_cost * pray_alive + prey_additional_reward for _ in range(self.n_preys)]
-        rewards.extend(rewards_preys)
-# E: REWARDING FRAGMENT
+        # E: REWARDING FRAGMENT
 
         if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
             for i in range(self.n_agents):
