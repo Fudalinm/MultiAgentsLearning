@@ -31,11 +31,11 @@ class PredatorPrey(gym.Env):
         self._prey_capture_reward = prey_capture_reward
         self._agent_view_mask = (5, 5)
 
-        self.action_predator_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_predators)])
-        self.action_prey_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_preys)])
-        self.action_agent_space = []
-        self.action_agent_space.extend(self.action_predator_space)
-        self.action_agent_space.extend(self.action_prey_space)
+        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_predators+self.n_preys)])
+        # self.action_prey_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_preys)])
+        # self.action_agent_space = []
+        # self.action_agent_space.extend(self.action_predator_space)
+        # self.action_agent_space.extend(self.action_prey_space)
 
         self.predator_pos = {_: None for _ in range(self.n_predators)}
         self.prey_pos = {_: None for _ in range(self.n_preys)}
@@ -55,10 +55,10 @@ class PredatorPrey(gym.Env):
         self._obs_high = np.array([1., 1.] + [1.] * mask_size + [1.0])
         self._obs_low = np.array([0., 0.] + [0.] * mask_size + [0.0])
         if self.full_observable:
-            self._obs_high = np.tile(self._obs_high, self.n_agents)
-            self._obs_low = np.tile(self._obs_low, self.n_agents)
+            self._obs_high = np.tile(self._obs_high, self.n_agents + self.n_preys)
+            self._obs_low = np.tile(self._obs_low, self.n_agents + self.n_preys)
         self.observation_space = MultiAgentObservationSpace(
-            [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)])
+            [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents + self.n_preys)])
 
         self._total_episode_reward = None
 
