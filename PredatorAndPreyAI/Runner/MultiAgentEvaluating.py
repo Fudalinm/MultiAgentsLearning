@@ -1,8 +1,11 @@
 import time
 
-class Evaluating:
-    def __init__(self, Q, env):
-        self.Q = Q
+from LearningAgent import LearningAgent
+
+
+class MultiAgentEvaluating:
+    def __init__(self, Qs, env):
+        self.agents = [LearningAgent(Q, env.action_space[0].n) for Q in Qs]
         self.env = env
         self.current_episode = 0
         self.episodes_amount = 100
@@ -27,8 +30,7 @@ class Evaluating:
         episode_reward = 0
         while not all(dones):
 
-            actions = [self.Q.act(observation) for observation in observations]
-
+            actions = [agent.evaluate(observation) for agent, observation in zip(self.agents, observations)]
             next_observations, rewards, dones, info = self.env.step(actions)
             episode_reward += sum(rewards)
 
