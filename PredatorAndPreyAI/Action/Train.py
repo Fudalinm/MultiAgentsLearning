@@ -8,16 +8,20 @@ import os
 
 
 class Train(Action):
-    def __init__(self, path):
-        if not os.path.exists(path):
-            raise Exception('Neural network doesnt exist on this path')
-        super(Train, self).__init__(path)
-        self.net = torch.load(path)
-        self.net = self.net.train()
-        self.Q = QNetwork(self.net, lr=1e-4)
+    def __init__(self, paths):
+        for path in paths:
+            if not os.path.exists(path):
+                raise Exception(f'Neural network doesnt exist on path: {path}')
+        super(Train, self).__init__(paths)
+        self.Qs = [self.create_q(path) for path in paths]
         self.env = EnvironmentFactory().create()
 
+    @staticmethod
+    def create_q(path):
+        net = torch.load(path)
+        net = net.train()
+        return QNetwork(net, path, lr=1e-4)
+
     def execute(self):
-        ml = MultiAgentMachineLearning(self.Q, self.env, self.path)
+        ml = MultiAgentMachineLearning(self.Qs, self.env)
         ml.train()
-        torch.save(self.net, self.path)

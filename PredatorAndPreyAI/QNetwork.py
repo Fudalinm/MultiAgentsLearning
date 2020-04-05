@@ -2,9 +2,10 @@ import torch
 import numpy as np
 
 
-class QNetwork():
-    def __init__(self, net, lr=0.001):
+class QNetwork:
+    def __init__(self, net, path, lr=0.001):
         self.net = net
+        self.path = path
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=lr)
 
     def update(self, deltas):
@@ -41,3 +42,6 @@ class QNetwork():
         liczenia Q-target.
         """
         return self.get_q_value(states).cpu().detach().numpy().max(1)
+
+    def save(self):
+        torch.save(self.net, self.path)

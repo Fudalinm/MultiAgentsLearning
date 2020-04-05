@@ -2,21 +2,27 @@ import torch
 
 from Action.Action import Action
 from EnvironmentFactory import EnvironmentFactory
-from Runner.Evaluating import Evaluating
 from QNetwork import QNetwork
 import os
 
+from Runner.MultiAgentEvaluating import MultiAgentEvaluating
+
 
 class Evaluate(Action):
-    def __init__(self, path):
-        if not os.path.exists(path):
-            raise Exception('Neural network doesnt exist on this path')
-        super(Evaluate, self).__init__(path)
-        self.net = torch.load(path)
-        self.net = self.net.eval()
-        self.Q = QNetwork(self.net, lr=1e-4)
+    def __init__(self, paths):
+        for path in paths:
+            if not os.path.exists(path):
+                raise Exception(f'Neural network doesnt exist on path: {path}')
+        super(Evaluate, self).__init__(paths)
+        self.Qs = [self.create_q(path) for path in paths]
         self.env = EnvironmentFactory().create()
 
+    @staticmethod
+    def create_q(path):
+        net = torch.load(path)
+        net = net.train()
+        return QNetwork(net, path, lr=1e-4)
+
     def execute(self):
-        evaluating = Evaluating(self.Q, self.env)
+        evaluating = MultiAgentEvaluating(self.Qs, self.env)
         evaluating.evaluate()
