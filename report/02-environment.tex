@@ -7,6 +7,10 @@ najpewniej.
 Ciekawym rozwiązaniem okazał się być system służący do 
 trenowania agentów udostępniony przez grupę OpenAI o nazwie
 \textit{Gym}\cite{openai_gym}. Docelowo jednak, udostępniona biblioteka
-nie była projektowana z myślą o systemach wieloagentowych.
+nie była projektowana z myślą o systemach wieloagentowych. Jej głównym zastosowaniem
+są systemy, gdzie każdy agent może pełnić dowolną funkcję, jak na przykład gry dla dwóch
+osób o identycznych zasadach dla obu graczy.
 Udało nam się jednak znaleźć wersję biblioteki OpenAi rozwiniętą
-o wsparcie dla wielu agentów\cite{ma_gym}.
+o wsparcie dla wielu agentów\cite{ma_gym}. W odróżnieniu od oryginalnej biblioteki
+każdy agent posiada własne parametry, co pozwala na indywidualną naukę każdego z nich.
+Takie rozwiązanie z kolei umożliwia modelowanie bardziej zaawansowanych zachowań i systemów.
