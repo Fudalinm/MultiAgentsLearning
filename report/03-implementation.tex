@@ -29,4 +29,59 @@ Niezależnie od siebie agenci podejmują następujące decyzje:
 \end{itemize}
 
 
+\subsection{Learning}
+Do nauczania w agnetów w naszej pracy użyliśmy popularnego rozwiązania reinforcement learningu.
+
+\subsection{Funkcja nagrody}
+W grze definiujemy funkcję kosztu tury. Koszt wykonania tury w naszym przypadku jest liczbą ujemną. Predatorom
+za każdą turę odejmuje się punkty, ponieważ ich celem jest jak najszybsze schwytanie ofiar. Natomiast ofiary otrzymują 
+punkty z każdą turą ponieważ w ich celem jest przeżycie jak największej liczby tur.\\
+
+Funkcja nagrody skłąda sie z następujących czynników
+\begin{itemize}
+    \item Koszt ruchu - oznaczony dalej jako sc (step cost) - globalne zwykle mniejszy 0
+    \item Ilość żywych ofiar - oznaczona jako pa (prays alive)
+    \item Kara za podejście wyłącznie jednego predatora do ofiary - oznaczona jako p (penalty) - globalne zwykle mniejszy 0 
+    \item Nagroda za schwytania ofiary - oznaczone jako cr (capture reward) - globalne zwykle większy 0
+    \item Ilość predatorów w najbliższym otoczeniu danej ofiary- oznaczone jako pc (predators count)
+\end{itemize}
+
+Nagroda przyznana ofierze w danym ruchu wyraża się w następujący sposób:\\
+\begin{algorithm}[H]
+ praysAlive = getPraysAlive()\;
+ pa = len(praysAlive)\;
+ \For{predator in getPredatorsList():}{
+    predator.reward = PredatorBaseAward(sc,pa)\;
+ }
+ \For{pray in praysAlive:}{
+    prey.reward  += PreyBaseAward(sc,pa)\;
+    pc = countPredatorsAround(prey)\;
+    prey.reward  += PreyAdditionalAward(p,cr,pc)\;
+    \For{for predator in getPredatorsNeighbourList(prey):}{
+        predator.reward +=  PredatorAdditionalAward(p,cr,pc)\;
+    }
+ }
+ \caption{Rewarding algorith}
+\end{algorithm}
+
+\\
+PreyBaseAward(sc, pa) = sc*pa \\
+PredatorBaseAward(sc, pa) = -sc * pa \\
+PreyAdditionalAward(p, cr, pc) = \begin{cases}
+    \text{if }  pc = 0 & =  0\\
+    \text{else if } pc = 1 & = + p \\
+    \text{else } pc > 1& = - cr \\
+\end{cases}\\
+PredatorAdditionalAward(p, cr, pc)= \begin{cases}
+    \text{if }  pc = 0 & =  0\\
+    \text{else if } pc = 1 & = p \\
+    \text{else } pc > 1& = cr/pc \\
+\end{cases}
+
+
+
+
+
+
+
 

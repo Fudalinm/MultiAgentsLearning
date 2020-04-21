@@ -326,9 +326,9 @@ class PredatorPrey(gym.Env):
                 if not (self._agent_dones[agent_i]):
                     self.__update_predator_pos(agent_i, action)
 
-        # S: REWARDING FRAGMENT
+        """ S: REWARDING FRAGMENT """
         rewards = [self._step_cost * pray_alive for _ in range(self.n_predators)]
-        rewards_preys = [-2 * self._step_cost * pray_alive for _ in range(self.n_preys)]
+        rewards_preys = [-1 * self._step_cost * pray_alive for _ in range(self.n_preys)]
         rewards.extend(rewards_preys)
 
         for prey_i in range(self.n_preys):
@@ -350,7 +350,7 @@ class PredatorPrey(gym.Env):
                     if not f_alive:
                         self.__update_prey_pos(prey_i, None)
 
-        # E: REWARDING FRAGMENT
+        """ E: REWARDING FRAGMENT """
 
         if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
             for i in range(self.n_agents):
