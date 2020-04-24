@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-0.5,
+    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-1,
                  step_cost=-0.1, prey_capture_reward=5, max_steps=100):
         self._grid_shape = grid_shape
         self.n_predators = n_agents
@@ -336,12 +336,12 @@ class PredatorPrey(gym.Env):
                 predator_neighbour_count, n_i = self._neighbour_predators(self.prey_pos[prey_i])
 
                 if predator_neighbour_count >= 1:
-                    reward_predators_around = self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
+                    reward_predators_around = self._penalty/self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
 
                     for predator_index in n_i:
                         rewards[predator_index] += reward_predators_around
                     # pray should also be punished for any predator nearby
-                    rewards[self.n_predators + prey_i] += self._penalty if predator_neighbour_count == 1 else - self._prey_capture_reward
+                    rewards[self.n_predators + prey_i] += self._penalty/self._step_count if predator_neighbour_count == 1 else - self._prey_capture_reward
 
                     f_alive = (predator_neighbour_count == 1)
                     self._prey_alive[prey_i] = f_alive
