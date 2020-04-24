@@ -1,6 +1,7 @@
 import argparse
 
 import gym
+from math import sqrt
 
 from ma_gym.wrappers import Monitor
 
@@ -26,8 +27,18 @@ if __name__ == '__main__':
         while not all(done_n):
             action_n = [int(_) for _ in input('Action:')]
             obs_n, reward_n, done_n, _ = env.step(action_n)
-            # print(obs_n[1])
-            print(reward_n)
+
+            print('######')
+            for i in range(len(obs_n)):
+                print('$$$$ AGENT {} $$$$$'.format(i))
+                obs = obs_n[i]
+                print('Cords: x: {} y: {}'.format(obs[0], obs[1]))
+                print('Time: {}'.format(obs[-1]))
+                print('Map')
+                map = obs_n[i][2:-1]
+                for r in range(int(sqrt(len(map)))):
+                    cols = int(sqrt(len(map)))
+                    print('{}'.format(map[r*cols:(r+1)*cols]))
             ep_reward += sum(reward_n)
             env.render()
 
