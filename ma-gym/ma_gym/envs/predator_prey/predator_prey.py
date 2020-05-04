@@ -336,7 +336,7 @@ class PredatorPrey(gym.Env):
                 predator_neighbour_count, n_i = self._neighbour_predators(self.prey_pos[prey_i])
 
                 if predator_neighbour_count >= 1:
-                    reward_predators_around = self._penalty/self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
+                    reward_predators_around = -self._penalty/self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
 
                     for predator_index in n_i:
                         rewards[predator_index] += reward_predators_around
