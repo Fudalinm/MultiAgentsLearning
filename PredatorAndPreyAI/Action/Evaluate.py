@@ -19,6 +19,7 @@ class Evaluate(Action):
 
     @staticmethod
     def create_q(path):
+        print(path)
         net = torch.load(path)
         net = net.train()
         return QNetwork(net, path, lr=1e-4)

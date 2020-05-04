@@ -1,5 +1,5 @@
 import time
-
+import numpy as np
 from LearningAgent import LearningAgent
 
 
@@ -34,10 +34,15 @@ class MultiAgentMachineLearning:
                     zip(self.agents, observations, actions, rewards, next_observations, dones):
                 agent.train(observation.copy(), action, reward, next_observation.copy(), done)
 
+
             episode_reward += sum(rewards)
             observations = next_observations.copy()
 
             self.env.render()
+            print(np.reshape(next_observations[0][2:-1], (5, 5)))
+            print(rewards)
+            time.sleep(5)
 
-        print(f"\r episode: {self.current_episode+1}/{self.episodes} reward: {episode_reward:.2f}")
+            killed_preys = sum([0 if preyAlive else 1 for preyAlive in info['prey_alive']])
+        print(f"\r episode: {self.current_episode+1}/{self.episodes} reward: {episode_reward:.2f}, killed preys: {killed_preys}")
 
