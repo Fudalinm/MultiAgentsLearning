@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import math
 
 from NeuralNetwork.NeuralNetwork import NeuralNetwork
 
@@ -15,13 +16,13 @@ class AbstractConvNeuralNetwork(NeuralNetwork):
         super(AbstractConvNeuralNetwork, self).__init__(n_obs, n_actions)
 
     def forward(self, state):
-        if isinstance(state, np.ndarray):
-            state = state.copy()
-        if isinstance(state, np.ndarray) or isinstance(state, LazyFrames):
-            state = torch.tensor(state, dtype=torch.float32)
-        state = state / 255
-        state = state.view(-1, *self.n_obs)
-        state = torch.transpose(state, 1, 3).to(device)
+        if not isinstance(state, np.ndarray):
+            state = np.array(state).reshape(1, -1)
+        state = state[:, 2:-1].copy()
+        state = torch.tensor(state, dtype=torch.float32)
+        size = int(math.sqrt(state.shape[-1]))
+        state = state.view(-1, 1, size, size)
+        state = state.to(device)
         x = self.conv_net.forward(state)
         x = x.view(x.shape[0], -1)
         x = self.fc_net.forward(x)
