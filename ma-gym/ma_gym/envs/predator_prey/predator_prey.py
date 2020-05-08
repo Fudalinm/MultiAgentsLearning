@@ -120,6 +120,10 @@ class PredatorPrey(gym.Env):
 
     """ it updates observable map for predators they don't know where are their colleagues  """
 
+    # wall -1
+    # friend 0.5
+    # enemy 1
+
     def get_predator_obs(self):
         _obs = []
         for agent_i in range(self.n_predators):
@@ -127,13 +131,15 @@ class PredatorPrey(gym.Env):
             _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
 
             # check if prey is in the view area
-            _prey_pos = np.zeros(self._agent_view_mask)  # prey location in neighbour
+            _prey_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
-                    if PRE_IDS['predator'] in self._full_obs[row][col]:  # coleagues has been seen as -1
-                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = -1
+                    elif PRE_IDS['predator'] in self._full_obs[row][col]:
+                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
+                    else:
+                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
@@ -151,16 +157,17 @@ class PredatorPrey(gym.Env):
         for agent_i in range(self.n_preys):
             pos = self.agent_pos[agent_i + self.n_predators]
             _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
-
             # check if prey is in the view area
-            _predator_pos = np.zeros(self._agent_view_mask)  # prey location in neighbour
+            _predator_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['predator'] in self._full_obs[row][col]:
                         _predator_pos[
-                            row - (pos[0] - 2), col - (pos[1] - 2)] = -1  # get relative position for the predator loc.
-                    if PRE_IDS['prey'] in self._full_obs[row][col]:
-                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1
+                            row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the predator loc.
+                    elif PRE_IDS['prey'] in self._full_obs[row][col]:
+                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
+                    else:
+                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
 
             _agent_i_obs += _predator_pos.flatten().tolist()  # adding prey pos in observable area
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
@@ -336,17 +343,19 @@ class PredatorPrey(gym.Env):
                 predator_neighbour_count, n_i = self._neighbour_predators(self.prey_pos[prey_i])
 
                 if predator_neighbour_count >= 1:
-                    reward_predators_around = -self._penalty/self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(n_i)
+                    reward_predators_around = -self._penalty / self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(
+                        n_i)
 
                     for predator_index in n_i:
                         rewards[predator_index] += reward_predators_around
                     # pray should also be punished for any predator nearby
-                    rewards[self.n_predators + prey_i] += self._penalty/self._step_count if predator_neighbour_count == 1 else - self._prey_capture_reward
+                    rewards[
+                        self.n_predators + prey_i] += self._penalty / self._step_count if predator_neighbour_count == 1 else - self._prey_capture_reward
 
                     f_alive = (predator_neighbour_count == 1)
                     self._prey_alive[prey_i] = f_alive
                     self._agent_dones[self.n_predators + prey_i] = not f_alive
-                    #if pray is killed we need to whip it out from the map
+                    # if pray is killed we need to whip it out from the map
                     if not f_alive:
                         self.__update_prey_pos(prey_i, None)
 
