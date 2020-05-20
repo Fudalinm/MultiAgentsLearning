@@ -14,6 +14,19 @@ from ..utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
 logger = logging.getLogger(__name__)
 
+# 0 - obecny agent
+# 2 - puste pole
+# 3 - agent z tej samej druzyny
+# 4 - nieznane pole
+# 5 - agent z przeciwnej druzyny
+
+# MAP FIELD DEFINITION
+CURRENT_AGENT = 0
+EMPTY = 2
+TEAMMATE = 3
+UNKNOWN = 4
+OPPONENT = 5
+
 
 class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
@@ -120,30 +133,56 @@ class PredatorPrey(gym.Env):
 
     """ it updates observable map for predators they don't know where are their colleagues  """
 
-    # wall -1
-    # friend 0.5
-    # enemy 1
+    # 0 - obecny agent
+    # 2 - puste pole
+    # 3 - agent z tej samej druzyny
+    # 4 - nieznane pole
+    # 5 - agent z przeciwnej druzyny
 
     def get_predator_obs(self):
-        _obs = []
+        # create predator general map
+        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN)
         for agent_i in range(self.n_predators):
             pos = self.predator_pos[agent_i]
-            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
-
-            # check if prey is in the view area
-            _prey_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
-                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
+                        general_map[row, col] = OPPONENT
                     elif PRE_IDS['predator'] in self._full_obs[row][col]:
-                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
+                        general_map[row, col] = TEAMMATE
                     else:
-                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
+                        general_map[row, col] = EMPTY
 
-            _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
+        _obs = []
+        for agent_i in range(self.n_predators):
+            pos = self.predator_pos[agent_i]
+            _agent_i_map = np.copy(general_map)
+            _agent_i_map[pos[0], pos[1]] = CURRENT_AGENT
+
+            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
+            _agent_i_obs += _agent_i_map.flatten().tolist()
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
             _obs.append(_agent_i_obs)
+
+        # _obs = []
+        # for agent_i in range(self.n_predators):
+        #     pos = self.predator_pos[agent_i]
+        #     _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
+        #
+        #     # check if prey is in the view area
+        #     _prey_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
+        #     for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
+        #         for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
+        #             if PRE_IDS['prey'] in self._full_obs[row][col]:
+        #                 _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
+        #             elif PRE_IDS['predator'] in self._full_obs[row][col]:
+        #                 _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
+        #             else:
+        #                 _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
+        #
+        #     _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
+        #     _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+        #     _obs.append(_agent_i_obs)
 
         if self.full_observable:
             _obs = np.array(_obs).flatten().tolist()
@@ -153,25 +192,50 @@ class PredatorPrey(gym.Env):
     """ it updates observable map for preys they don't know where are their colleagues """
 
     def get_prey_obs(self):
+        # create predator general map
+        # print(self._full_obs)
+        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN)
+        for agent_i in range(self.n_preys):
+            pos = self.agent_pos[agent_i + self.n_predators]
+            for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
+                for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
+                    if PRE_IDS['prey'] in self._full_obs[row][col]:
+                        general_map[row, col] = TEAMMATE
+                    elif PRE_IDS['predator'] in self._full_obs[row][col]:
+                        general_map[row, col] = OPPONENT
+                    else:
+                        general_map[row, col] = EMPTY
+
         _obs = []
         for agent_i in range(self.n_preys):
             pos = self.agent_pos[agent_i + self.n_predators]
-            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
-            # check if prey is in the view area
-            _predator_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
-            for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
-                for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
-                    if PRE_IDS['predator'] in self._full_obs[row][col]:
-                        _predator_pos[
-                            row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the predator loc.
-                    elif PRE_IDS['prey'] in self._full_obs[row][col]:
-                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
-                    else:
-                        _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
+            _agent_i_map = np.copy(general_map)
+            _agent_i_map[pos[0], pos[1]] = CURRENT_AGENT
 
-            _agent_i_obs += _predator_pos.flatten().tolist()  # adding prey pos in observable area
+            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
+            _agent_i_obs += _agent_i_map.flatten().tolist()
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
             _obs.append(_agent_i_obs)
+
+        # _obs = []
+        # for agent_i in range(self.n_preys):
+        #     pos = self.agent_pos[agent_i + self.n_predators]
+        #     _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / (self._grid_shape[1] - 1)]  # coordinates
+        #     # check if prey is in the view area
+        #     _predator_pos = np.full(self._agent_view_mask, -1, dtype=np.single)  # prey location in neighbour
+        #     for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
+        #         for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
+        #             if PRE_IDS['predator'] in self._full_obs[row][col]:
+        #                 _predator_pos[
+        #                     row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the predator loc.
+        #             elif PRE_IDS['prey'] in self._full_obs[row][col]:
+        #                 _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0.5
+        #             else:
+        #                 _predator_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 0
+        #
+        #     _agent_i_obs += _predator_pos.flatten().tolist()  # adding prey pos in observable area
+        #     _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+        #     _obs.append(_agent_i_obs)
 
         if self.full_observable:
             _obs = np.array(_obs).flatten().tolist()
