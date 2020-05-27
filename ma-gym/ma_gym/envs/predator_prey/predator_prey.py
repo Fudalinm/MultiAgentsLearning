@@ -139,20 +139,28 @@ class PredatorPrey(gym.Env):
     # 3 - agent z tej samej druzyny
     # 4 - nieznane pole
     # 5 - agent z przeciwnej druzyny
-
+    #
     def get_predator_obs(self):
         # create predator general map
         general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN, dtype=np.float)
+        agents_relative_view = []
         for agent_i in range(self.n_predators):
             pos = self.predator_pos[agent_i]
+            agent_i_view = np.full((5, 5), WALL, dtype=np.float)
+            agent_i_view[2, 2] = CURRENT_AGENT
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         general_map[row, col] = OPPONENT
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = OPPONENT
                     elif PRE_IDS['predator'] in self._full_obs[row][col]:
                         general_map[row, col] = TEAMMATE
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = TEAMMATE
                     else:
                         general_map[row, col] = EMPTY
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = EMPTY
+            agent_i_view[2, 2] = CURRENT_AGENT
+            agents_relative_view += [agent_i_view.flatten().tolist()]
 
         _obs = []
         for agent_i in range(self.n_predators):
@@ -160,9 +168,10 @@ class PredatorPrey(gym.Env):
             _agent_i_map = np.copy(general_map)
             _agent_i_map[pos[0], pos[1]] = CURRENT_AGENT
 
-            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
-            _agent_i_obs += _agent_i_map.flatten().tolist()
-            _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+            # _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
+            _agent_i_obs = _agent_i_map.flatten().tolist()
+            # _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+            _agent_i_obs += agents_relative_view[agent_i] # adding relative view
             _obs.append(_agent_i_obs)
 
         # _obs = []
@@ -196,16 +205,23 @@ class PredatorPrey(gym.Env):
         # create predator general map
         # print(self._full_obs)
         general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN, dtype=np.float)
+        agents_relative_view = []
         for agent_i in range(self.n_preys):
             pos = self.agent_pos[agent_i + self.n_predators]
+            agent_i_view = np.full((5, 5), WALL, dtype=np.float)
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         general_map[row, col] = TEAMMATE
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = TEAMMATE
                     elif PRE_IDS['predator'] in self._full_obs[row][col]:
                         general_map[row, col] = OPPONENT
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = OPPONENT
                     else:
                         general_map[row, col] = EMPTY
+                        agent_i_view[row - (pos[0] - 2), col - (pos[1] - 2)] = EMPTY
+            agent_i_view[2, 2] = CURRENT_AGENT
+            agents_relative_view += [agent_i_view.flatten().tolist()]
 
         _obs = []
         for agent_i in range(self.n_preys):
@@ -213,9 +229,10 @@ class PredatorPrey(gym.Env):
             _agent_i_map = np.copy(general_map)
             _agent_i_map[pos[0], pos[1]] = CURRENT_AGENT
 
-            _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
-            _agent_i_obs += _agent_i_map.flatten().tolist()
-            _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+            # _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
+            _agent_i_obs = _agent_i_map.flatten().tolist()
+            # _agent_i_obs += [self._step_count / self._max_steps]  # adding time
+            _agent_i_obs += agents_relative_view[agent_i]  # adding relative view
             _obs.append(_agent_i_obs)
 
         # _obs = []

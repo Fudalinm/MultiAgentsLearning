@@ -32,13 +32,21 @@ if __name__ == '__main__':
             for i in range(len(obs_n)):
                 print('$$$$ AGENT {} $$$$$'.format(i))
                 obs = obs_n[i]
-                print('Cords: x: {} y: {}'.format(obs[0], obs[1]))
-                print('Time: {}'.format(obs[-1]))
+                # print('Cords: x: {} y: {}'.format(obs[0], obs[1]))
+                # print('Time: {}'.format(obs[-1]))
                 print('Map')
-                map = obs_n[i][2:-1]
+                map = obs_n[i][0:25]
+                relative_map = obs_n[i][25:]
+
                 for r in range(int(sqrt(len(map)))):
                     cols = int(sqrt(len(map)))
                     print('{}'.format(map[r*cols:(r+1)*cols]))
+
+                print('Relative map')
+                for r in range(int(sqrt(len(map)))):
+                    cols = int(sqrt(len(relative_map)))
+                    print('{}'.format(relative_map[r*cols:(r+1)*cols]))
+
             ep_reward += sum(reward_n)
             env.render()
 
