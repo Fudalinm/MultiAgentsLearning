@@ -11,12 +11,12 @@ class LearningAgent:
     def __init__(self, Q, num_actions):
         self.Q = Q
         self.num_actions = num_actions
-        self.eps_decay = 0.999992
+        self.eps_decay = 0.999
         self.final_eps = 0.01
         self.batch_size = 32
         self.update_freq = 4
         self.gamma = 0.9
-        self.eps = 1.0
+        self.eps = 1
         self.replay_buffer = ReplayBuffer(int(1e5))
         self.step_idx = 0
 
@@ -30,7 +30,7 @@ class LearningAgent:
             action = self.Q.act(observation)
 
         self.step_idx += 1
-        self.eps = max(self.final_eps, self.eps * self.eps_decay)
+        self.eps = self.eps * self.eps_decay if self.eps > self.final_eps else 0
         return action
 
     def train(self, observation, action, reward, next_observation, done):

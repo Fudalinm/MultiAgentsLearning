@@ -7,7 +7,7 @@ class MultiAgentMachineLearning:
     def __init__(self, Qs, env):
         self.agents = [LearningAgent(Q, env.action_space[0].n) for Q in Qs]
         self.env = env
-        self.episodes = 10000#00
+        self.episodes = 1000#000
         self.current_episode = 0
 
     def train(self):
@@ -39,10 +39,10 @@ class MultiAgentMachineLearning:
             observations = next_observations.copy()
 
             self.env.render()
-            # print(np.reshape(next_observations[0][2:-1], (5, 5)))
+            #print(np.reshape(next_observations[0][2:-1], (5, 5)))
             # print(rewards)
             # time.sleep(5)
 
-            killed_preys = sum([0 if preyAlive else 1 for preyAlive in info['prey_alive']])
+        killed_preys = sum([0 if preyAlive else 1 for preyAlive in info['prey_alive']])
         print(f"\r episode: {self.current_episode+1}/{self.episodes} reward: {episode_reward:.2f}, killed preys: {killed_preys}")
 
