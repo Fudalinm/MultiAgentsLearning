@@ -21,17 +21,18 @@ logger = logging.getLogger(__name__)
 # 5 - agent z przeciwnej druzyny
 
 # MAP FIELD DEFINITION
-CURRENT_AGENT = 0
-EMPTY = 2
-TEAMMATE = 3
-UNKNOWN = 4
-OPPONENT = 5
+UNKNOWN = 0
+WALL = 0.2
+EMPTY = 0.4
+OPPONENT = 0.6
+TEAMMATE = 0.8
+CURRENT_AGENT = 1
 
 
 class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-1,
+    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-20,
                  step_cost=-0.1, prey_capture_reward=5, max_steps=100):
         self._grid_shape = grid_shape
         self.n_predators = n_agents
@@ -141,7 +142,7 @@ class PredatorPrey(gym.Env):
 
     def get_predator_obs(self):
         # create predator general map
-        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN)
+        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN, dtype=np.float)
         for agent_i in range(self.n_predators):
             pos = self.predator_pos[agent_i]
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
@@ -194,7 +195,7 @@ class PredatorPrey(gym.Env):
     def get_prey_obs(self):
         # create predator general map
         # print(self._full_obs)
-        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN)
+        general_map = np.full((len(self._full_obs), len(self._full_obs[0])), UNKNOWN, dtype=np.float)
         for agent_i in range(self.n_preys):
             pos = self.agent_pos[agent_i + self.n_predators]
             for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):

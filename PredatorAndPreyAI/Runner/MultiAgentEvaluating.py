@@ -1,5 +1,5 @@
 import time
-
+import numpy as np
 from LearningAgent import LearningAgent
 
 
@@ -23,18 +23,29 @@ class MultiAgentEvaluating:
         print(f"\nWhole reward: {whole_reward}, whole killed preys: {whole_killed_preys}",)
 
     def evaluate_single(self):
-        dones = [False] * self.env.n_agents
+        # zresetuj środowisko
         observations = self.env.reset()
-        self.env.render()
+        observations = observations.copy()
 
+        # zapisuj nagrody z epizodu
         episode_reward = 0
-        while not all(dones):
+        dones = [False] * self.env.n_agents
 
+        while not all(dones):
             actions = [agent.evaluate(observation) for agent, observation in zip(self.agents, observations)]
             next_observations, rewards, dones, info = self.env.step(actions)
+            # dodaj nagrode do obecnych z epizodu
+            for agent, observation, action, reward, next_observation, done in \
+                    zip(self.agents, observations, actions, rewards, next_observations, dones):
+                agent.train(observation.copy(), action, reward, next_observation.copy(), done)
+
             episode_reward += sum(rewards)
+            observations = next_observations.copy()
 
             self.env.render()
+            # print(np.reshape(next_observations[0][2:-1], (5, 5)))
+            # print(rewards)
+            # time.sleep(5)
+
         killed_preys = sum([0 if preyAlive else 1 for preyAlive in info['prey_alive']])
-        print(killed_preys)
         return episode_reward, killed_preys
