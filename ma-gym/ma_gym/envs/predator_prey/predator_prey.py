@@ -21,11 +21,12 @@ logger = logging.getLogger(__name__)
 # 5 - agent z przeciwnej druzyny
 
 # MAP FIELD DEFINITION
-CURRENT_AGENT = 1
-EMPTY = 0.25
-TEAMMATE = 0.75
 UNKNOWN = 0
-OPPONENT = 0.5
+WALL = 0.2
+EMPTY = 0.4
+OPPONENT = 0.6
+TEAMMATE = 0.8
+CURRENT_AGENT = 1
 
 
 class PredatorPrey(gym.Env):
