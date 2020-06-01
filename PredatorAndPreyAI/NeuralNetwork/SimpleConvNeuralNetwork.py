@@ -8,7 +8,7 @@ device = torch.device("cuda") if torch.cuda.is_available() and torch.cuda.curren
 class SimpleConvNeuralNetwork(AbstractConvNeuralNetwork):
     def __init__(self, n_obs, n_actions):
         super(SimpleConvNeuralNetwork, self).__init__(n_obs, n_actions)
-        self.fc_dims = [256, 128]
+        self.fc_dims = [512]
         print(n_obs)
         size = int(math.sqrt(n_obs - 3))
         out_height = size

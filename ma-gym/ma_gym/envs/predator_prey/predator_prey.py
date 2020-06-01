@@ -21,19 +21,19 @@ logger = logging.getLogger(__name__)
 # 5 - agent z przeciwnej druzyny
 
 # MAP FIELD DEFINITION
-UNKNOWN = 0
-WALL = 0.2
-EMPTY = 0.4
-OPPONENT = 0.6
-TEAMMATE = 0.8
-CURRENT_AGENT = 1
+CURRENT_AGENT = -1
+WALL = 0
+EMPTY = 0.2
+UNKNOWN = 0.4
+TEAMMATE = 0.6
+OPPONENT = 1
 
 
 class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-20,
-                 step_cost=-0.1, prey_capture_reward=5, max_steps=100):
+                 step_cost=-0.1, prey_capture_reward=8, max_steps=100):
         self._grid_shape = grid_shape
         self.n_predators = n_agents
         self.n_preys = n_preys
@@ -405,7 +405,8 @@ class PredatorPrey(gym.Env):
         for agent_i in range(self.n_predators):
             pos = self.agent_pos[agent_i]
             min_distance = 1000000
-            for prey_pos in preys_pos:
+            for v in range(self.n_preys):
+                prey_pos = self.prey_pos[v]
                 current_distance = abs(pos[0] - prey_pos[0]) + abs(pos[1] - prey_pos[1])
                 if min_distance > current_distance:
                     min_distance = current_distance
@@ -414,7 +415,8 @@ class PredatorPrey(gym.Env):
         for agent_i in range(self.n_preys):
             pos = self.agent_pos[self.n_predators + agent_i]
             min_distance = 1000000
-            for prey_pos in predators_pos:
+            for v in range(self.n_predators):
+                prey_pos = self.predator_pos[v]
                 current_distance = abs(pos[0] - prey_pos[0]) + abs(pos[1] - prey_pos[1])
                 if min_distance > current_distance:
                     min_distance = current_distance
