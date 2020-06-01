@@ -10,7 +10,7 @@ device = torch.device("cuda") if torch.cuda.is_available() and torch.cuda.curren
 class FullyConnectedNeuralNetwork(NeuralNetwork):
     def __init__(self, n_obs, n_actions):
         super(FullyConnectedNeuralNetwork, self).__init__(n_obs, n_actions)
-        self.fc_dims = [128, 128]
+        self.fc_dims = [256]
         fc_layers = self.create_fully_connected_layers(n_obs, n_actions)
         self.fc_net = nn.Sequential(*fc_layers).to(device)
 
