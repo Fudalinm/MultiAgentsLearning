@@ -396,6 +396,32 @@ class PredatorPrey(gym.Env):
             predator_id.append(int(self._full_obs[x][y].split(PRE_IDS['predator'])[1]) - 1)
         return _count, predator_id
 
+    def find_closest_enemy(self):
+        to_ret = []
+        #getting preys pos
+        preys_pos = self.prey_pos
+        predators_pos = self.predator_pos
+
+        for agent_i in range(self.n_predators):
+            pos = self.agent_pos[agent_i]
+            min_distance = 1000000
+            for prey_pos in preys_pos:
+                current_distance = abs(pos[0] - prey_pos[0]) + abs(pos[1] - prey_pos[1])
+                if min_distance > current_distance:
+                    min_distance = current_distance
+            to_ret += [min_distance]
+
+        for agent_i in range(self.n_preys):
+            pos = self.agent_pos[self.n_predators + agent_i]
+            min_distance = 1000000
+            for prey_pos in predators_pos:
+                current_distance = abs(pos[0] - prey_pos[0]) + abs(pos[1] - prey_pos[1])
+                if min_distance > current_distance:
+                    min_distance = current_distance
+            to_ret += [min_distance]
+
+        return to_ret
+
     def step(self, agents_action):
         self._step_count += 1
 
@@ -404,6 +430,7 @@ class PredatorPrey(gym.Env):
             if self._prey_alive[i]:
                 pray_alive += 1
 
+        closest_before_move = np.array(self.find_closest_enemy())
         # updating moves for both predators and preys
         for agent_i, action in enumerate(agents_action):
             if agent_i >= self.n_predators:
@@ -414,10 +441,13 @@ class PredatorPrey(gym.Env):
                 # update predators
                 if not (self._agent_dones[agent_i]):
                     self.__update_predator_pos(agent_i, action)
+        closest_after_move = np.array(self.find_closest_enemy())
+        deltas = closest_before_move - closest_after_move
+
 
         """ S: REWARDING FRAGMENT """
-        rewards = [self._step_cost * pray_alive for _ in range(self.n_predators)]
-        rewards_preys = [-1 * self._step_cost * pray_alive for _ in range(self.n_preys)]
+        rewards = [self._step_cost * pray_alive + 0.5 * deltas[v] for v in range(self.n_predators)]
+        rewards_preys = [-1 * self._step_cost * pray_alive - 0.5 * deltas[v+self.n_predators] for v in range(self.n_preys)]
         rewards.extend(rewards_preys)
 
         for prey_i in range(self.n_preys):
