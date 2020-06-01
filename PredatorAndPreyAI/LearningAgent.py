@@ -11,7 +11,7 @@ class LearningAgent:
     def __init__(self, Q, num_actions):
         self.Q = Q
         self.num_actions = num_actions
-        self.eps_decay = 0.999
+        self.eps_decay = 0.99999
         self.final_eps = 0.01
         self.batch_size = 32
         self.update_freq = 4

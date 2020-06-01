@@ -7,7 +7,7 @@ class MultiAgentMachineLearning:
     def __init__(self, Qs, env):
         self.agents = [LearningAgent(Q, env.action_space[0].n) for Q in Qs]
         self.env = env
-        self.episodes = 1000#000
+        self.episodes = 10000
         self.current_episode = 0
 
     def train(self):
