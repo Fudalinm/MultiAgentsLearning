@@ -11,16 +11,18 @@ class MultiAgentEvaluating:
         self.episodes_amount = 100
 
     def evaluate(self):
-        whole_reward = 0
+        whole_reward_predators = 0
+        whole_reward_preys = 0
         whole_killed_preys = 0
         for _ in range(self.episodes_amount):
-            reward, killed_preys = self.evaluate_single()
-            print(f"\n Reward from this episode: {reward}, killed preys {killed_preys}",)
-            whole_reward += reward
+            episode_reward_predators, episode_reward_preys, killed_preys = self.evaluate_single()
+            print(f"\n Reward from this episode predators: {episode_reward_predators}, preys: {episode_reward_preys} killed preys {killed_preys}",)
+            whole_reward_predators += episode_reward_predators
+            whole_reward_preys += episode_reward_preys
             whole_killed_preys += killed_preys
             self.current_episode += 1
 
-        print(f"\nWhole reward: {whole_reward}, whole killed preys: {whole_killed_preys}",)
+        print(f"\nWhole reward predators: {whole_reward_predators}, preys: {whole_reward_preys} whole killed preys: {whole_killed_preys}",)
 
     def evaluate_single(self):
         # zresetuj środowisko
@@ -28,7 +30,8 @@ class MultiAgentEvaluating:
         observations = observations.copy()
 
         # zapisuj nagrody z epizodu
-        episode_reward = 0
+        episode_reward_predators = 0
+        episode_reward_preys = 0
         dones = [False] * self.env.n_agents
 
         while not all(dones):
@@ -39,13 +42,15 @@ class MultiAgentEvaluating:
                     zip(self.agents, observations, actions, rewards, next_observations, dones):
                 agent.train(observation.copy(), action, reward, next_observation.copy(), done)
 
-            episode_reward += sum(rewards)
+            episode_reward_predators += sum(rewards[:2])
+            episode_reward_preys += sum(rewards[2:])
             observations = next_observations.copy()
 
             self.env.render()
-            # print(np.reshape(next_observations[0][2:-1], (5, 5)))
+            # print(np.reshape(next_observations[0][:25], (5, 5)))
+            # print(np.reshape(next_observations[0][25:], (5, 5)))
             # print(rewards)
-            # time.sleep(5)
+            # time.sleep(2)
 
         killed_preys = sum([0 if preyAlive else 1 for preyAlive in info['prey_alive']])
-        return episode_reward, killed_preys
+        return episode_reward_predators, episode_reward_preys, killed_preys

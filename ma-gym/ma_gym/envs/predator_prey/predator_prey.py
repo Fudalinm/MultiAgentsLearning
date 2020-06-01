@@ -32,8 +32,8 @@ OPPONENT = 1
 class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-20,
-                 step_cost=-0.1, prey_capture_reward=8, max_steps=100):
+    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, full_observable=False, penalty=-0.1,
+                 step_cost=-0.01, prey_capture_reward=1, max_steps=100):
         self._grid_shape = grid_shape
         self.n_predators = n_agents
         self.n_preys = n_preys
@@ -171,7 +171,7 @@ class PredatorPrey(gym.Env):
             # _agent_i_obs = [pos[0] / self._grid_shape[0], pos[1] / self._grid_shape[1]]  # adding cords
             _agent_i_obs = _agent_i_map.flatten().tolist()
             # _agent_i_obs += [self._step_count / self._max_steps]  # adding time
-            _agent_i_obs += agents_relative_view[agent_i] # adding relative view
+            _agent_i_obs += agents_relative_view[agent_i]  # adding relative view
             _obs.append(_agent_i_obs)
 
         # _obs = []
@@ -398,7 +398,7 @@ class PredatorPrey(gym.Env):
 
     def find_closest_enemy(self):
         to_ret = []
-        #getting preys pos
+        # getting preys pos
         preys_pos = self.prey_pos
         predators_pos = self.predator_pos
 
@@ -446,10 +446,10 @@ class PredatorPrey(gym.Env):
         closest_after_move = np.array(self.find_closest_enemy())
         deltas = closest_before_move - closest_after_move
 
-
         """ S: REWARDING FRAGMENT """
-        rewards = [self._step_cost * pray_alive + 0.5 * deltas[v] for v in range(self.n_predators)]
-        rewards_preys = [-1 * self._step_cost * pray_alive - 0.5 * deltas[v+self.n_predators] for v in range(self.n_preys)]
+        rewards = [self._step_cost * pray_alive + 0.1 * deltas[v] for v in range(self.n_predators)]
+        rewards_preys = [-1 * self._step_cost * pray_alive - 0.1 * deltas[v + self.n_predators] for v in
+                         range(self.n_preys)]
         rewards.extend(rewards_preys)
 
         for prey_i in range(self.n_preys):
@@ -457,14 +457,13 @@ class PredatorPrey(gym.Env):
                 predator_neighbour_count, n_i = self._neighbour_predators(self.prey_pos[prey_i])
 
                 if predator_neighbour_count >= 1:
-                    reward_predators_around = -self._penalty / self._step_count if predator_neighbour_count == 1 else self._prey_capture_reward / len(
-                        n_i)
+                    reward_predators_around = -self._penalty if predator_neighbour_count == 1 else self._prey_capture_reward
 
                     for predator_index in n_i:
                         rewards[predator_index] += reward_predators_around
                     # pray should also be punished for any predator nearby
                     rewards[
-                        self.n_predators + prey_i] += self._penalty / self._step_count if predator_neighbour_count == 1 else - self._prey_capture_reward
+                        self.n_predators + prey_i] += self._penalty if predator_neighbour_count == 1 else - self._prey_capture_reward
 
                     f_alive = (predator_neighbour_count == 1)
                     self._prey_alive[prey_i] = f_alive
